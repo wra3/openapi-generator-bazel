@@ -80,6 +80,14 @@ def _new_generator_command(ctx, declared_dir, rjars):
         gen_cmd += " --engine {package}".format(
             package = ctx.attr.engine,
         )
+    if ctx.attr.config:
+        gen_cmd += " --config {config}".format(
+            config = ctx.attr.config.files.to_list()[0].path,
+        )
+    if ctx.attr.template_dir:
+        gen_cmd += " --template-dir {template_dir}".format(
+            template_dir = ctx.attr.template_dir.files.to_list()[0].path,
+        )
 
     # fixme: by default, openapi-generator is rather verbose. this helps with that but can also mask useful error messages
     # when it fails. look into log configuration options. it's a java app so perhaps just a log4j.properties or something
@@ -96,6 +104,12 @@ def _impl(ctx):
         ctx.file.openapi_generator_cli,
         ctx.file.spec,
     ] + cjars.to_list() + rjars.to_list()
+
+    if ctx.attr.config:
+        inputs += ctx.attr.config.files.to_list()
+
+    if ctx.attr.template_dir:
+        inputs += ctx.attr.template_dir.files.to_list()
 
     # TODO: Convert to run
     ctx.actions.run_shell(
@@ -157,6 +171,8 @@ _openapi_generator = rule(
                 ".yml",
             ],
         ),
+        "template_dir": attr.label(allow_single_file = True),
+        "config": attr.label(allow_single_file = True),
         "generator": attr.string(mandatory = True),
         "api_package": attr.string(),
         "invoker_package": attr.string(),
